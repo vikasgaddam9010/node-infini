@@ -7,7 +7,7 @@ const jwttoken = require('jsonwebtoken')
 const cors = require('cors')
 
 const app = express()
-//app.use(cors({origin: '*'}))
+app.use(cors({origin: '*'}))
 app.use(express.json())
 
 let dataBase
@@ -126,12 +126,38 @@ app.post('/add-events/', check, async (req, res) => {
     .send({message: 'Event Details Added...', dbRes, username: req.username})
 })
 
+//API - 4
 app.get('/all-items/:event_id/', check, async (req, res) => {
   const {event_id} = req.params
   const dbRes = await dataBase.get(
     `SELECT * FROM user_uploaded WHERE event_id = '${event_id}';`,
   )
   res.status(200).send({dbRes})
+})
+
+//API - 5
+app.get('/get-event-details/:event_id', check, async (req, res) => {
+  try {
+    const dbRes = await dataBase.get(
+      `SELECT * FROM user_uploaded WHERE event_id = '${req.params.event_id}';`,
+    )
+    res.status(200).send(dbRes)
+  } catch (e) {
+    console.log(e.message)
+  }
+})
+
+//API - 6
+app.put('/update-event/:event_id', check, async (req, res) => {
+  try {
+    console.log(req.params.event_id)
+    const dbRes = await dataBase.get(
+      `SELECT * FROM user_uploaded WHERE event_id = '${req.params.event_id}';`,
+    )
+    get
+  } catch (e) {
+    console.log(e.message)
+  }
 })
 
 app.listen(3000)
