@@ -88,15 +88,18 @@ app.get('/get-events/', check, async (req, res) => {
   try {
     const username = req.username
 
-    const query = `SELECT * FROM user_uploaded WHERE username = ?`
-    const params = [username]
+    const query = `SELECT * FROM user_uploaded WHERE username = '${username}'`
 
-    const dbRes = await dataBase.all(query, params)
 
-    const queryID = `SELECT * FROM users WHERE username = ?`
-    const paramsID = [username]
+    const dbRes = await dataBase.all(query)
 
-    const dbResID = await dataBase.get(queryID, paramsID)
+    console.log(dbRes)
+
+    const queryID = `SELECT * FROM users WHERE username = '${username}'`
+ 
+    const dbResID = await dataBase.get(queryID)
+
+    console.log(dbResID)
 
     if (dbRes.length === 0) {
       return res.status(404).send({
@@ -104,8 +107,10 @@ app.get('/get-events/', check, async (req, res) => {
         dbRes: [],
       })
     }
+    
 
     res.status(200).json({dbRes, username: req.username, id: dbResID.id})
+    
   } catch (error) {
     console.error('Database query error:', error.message)
 
@@ -127,12 +132,22 @@ app.post('/add-events/', check, async (req, res) => {
 })
 
 //API - 4
-app.get('/all-items/:event_id/', check, async (req, res) => {
-  const {event_id} = req.params
-  const dbRes = await dataBase.get(
-    `SELECT * FROM user_uploaded WHERE event_id = '${event_id}';`,
-  )
-  res.status(200).send({dbRes})
+app.get('/all-items/:id/', check, async (req, res) => {
+
+  
+  try{
+    const {id} = req.params
+    console.log(id)
+    const dbRes = await dataBase.get(
+      `SELECT * FROM user_uploaded WHERE event_id = '${id}';`,
+    )
+    console.log(dbRes)
+    res.status(200).send({dbRes})
+
+  }catch(e){
+    res.status(400).send({message: e.message})
+  }
+  
 })
 
 //API - 5
@@ -160,20 +175,32 @@ app.put('/update-event/:event_id', check, async (req, res) => {
   }
 })
 
-app.put("/update-event-detail/:event_id", check, async (req, res) => {
+app.put("/update-event-detail/", check, async (req, res) => {
   try {
-    //console.log(req.params.event_id)
-    const dbRes = await dataBase.get(`SELECT * FROM user_uploaded WHERE event_id = '${req.params.event_id}'`)
+    console.log(req.body.event_id)
+    const dbRes = await dataBase.get(`SELECT * FROM user_uploaded WHERE event_id = '${req.body.event_id}'`)
     if(dbRes !== undefined){
       //console.log(req.body.files)
-      const update = await db.run(`UPDATE user_uploaded SET uploads = ${req.body.files} WHERE event_id ='${req.params.event_id}';`)
-      console.log("vfg"+update)
+      const update = await dataBase.run(`UPDATE user_uploaded SET uploads = '${req.body.files}' WHERE event_id ='${req.body.event_id}';`)
+      res.status(200).send({message: "Sucess"})
     }
   }catch(e){
-    console.log(e.message+"dsfjjdf")
+    console.log(e.message)
+  }
+})
+
+app.delete("/delete/:event_id/", check, async(req, res) => {
+  try {
+    const {event_id} = req.params
+    console.log(event_id)
+    await dataBase.run(`DELETE FROM user_uploaded WHERE event_id = '${event_id}';`)
+    res.status(200).send({message: "Succefully Deleted"})
+  }catch(e){
+    res.status(400).send({message: e.message})
   }
 })
 
 app.listen(3001)
 
 module.exports = app
+
