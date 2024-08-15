@@ -46,68 +46,68 @@ const check = (req, res, next) => {
 }
 
 app.post('/register/', async (req, res) => {
-  const {id, username, password} = req.body
-  //console.log(id, username, password)
-
-  const checkUserNameInDb = await dataBase.get(
-    `SELECT * FROM users WHERE username = '${username}';`,
-  )
-  if (checkUserNameInDb === undefined) {
-    const hasedPassword = await bcrypt.hash(password, 10)
-    await dataBase.run(
-      `INSERT INTO users (id, username, password) VALUES ('${id}', '${username}', '${hasedPassword}');`,
+  try {
+    const {id, username, password} = req.body
+    const checkUserNameInDb = await dataBase.get(
+      `SELECT * FROM users WHERE username = '${username}';`,
     )
-    res.status(200).send({message: 'User Added'})
-  } else {
-    res.status(400).send({message: 'Username already Existing.'})
+    if (checkUserNameInDb === undefined) {
+      const hasedPassword = await bcrypt.hash(password, 10)
+      await dataBase.run(
+        `INSERT INTO users (id, username, password) VALUES ('${id}', '${username}', '${hasedPassword}');`,
+      )
+      res.status(200).send({message: 'User Added'})
+    } else {
+      res.status(400).send({message: 'Username already Existing.'})
+    }
+  }catch(e){
+    res.status(400).send({message: e.message})
+
   }
 })
 
 //API - 1
 app.post('/log-in/', async (req, res) => {
-  const {username, password} = req.body
-  const dbRes = await dataBase.get(
-    `SELECT * FROM users WHERE username = '${username}';`,
-  )
-
-  if (dbRes === undefined) {
-    res.status(400).send({message: 'Invalid user'})
-  } else {
-    const checkPassword = await bcrypt.compare(password, dbRes.password)
-    if (checkPassword) {
-      const jwtToken = jwttoken.sign({username}, 'encryptedKey')
-      res.status(200).send({message: 'Sucess', jwtToken})
+  try{
+    const {username, password} = req.body
+    const dbRes = await dataBase.get(
+      `SELECT * FROM users WHERE username = '${username}';`,
+    )
+    if (dbRes === undefined) {
+      res.status(400).send({message: 'Invalid user'})
     } else {
-      res.status(400).send({message: 'Invalid Password'})
+      const checkPassword = await bcrypt.compare(password, dbRes.password)
+      if (checkPassword) {
+        const jwtToken = jwttoken.sign({username}, 'encryptedKey')
+        res.status(200).send({message: 'Sucess', jwtToken})
+      } else {
+        res.status(400).send({message: 'Invalid Password'})
+      }
     }
+  }catch(e){
+    res.status(400).send({message: e.message})
+
   }
+
+  
 })
 
 //API - 2
 app.get('/get-events/', check, async (req, res) => {
   try {
     const username = req.username
-
     const query = `SELECT * FROM user_uploaded WHERE username = '${username}'`
-
-
     const dbRes = await dataBase.all(query)
 
-    console.log(dbRes)
-
     const queryID = `SELECT * FROM users WHERE username = '${username}'`
- 
     const dbResID = await dataBase.get(queryID)
-
-    console.log(dbResID)
 
     if (dbRes.length === 0) {
       return res.status(404).send({
         message: 'No records found for the specified username.',
         dbRes: [],
       })
-    }
-    
+    }   
 
     res.status(200).json({dbRes, username: req.username, id: dbResID.id})
     
@@ -115,26 +115,28 @@ app.get('/get-events/', check, async (req, res) => {
     console.error('Database query error:', error.message)
 
     res
-      .status(500)
+      .status(400)
       .send({message: 'An error occurred while processing your request.'})
   }
 })
 
 //API - 3
 app.post('/add-events/', check, async (req, res) => {
-  const {eventId, eventTitle, fileUrls} = req.body
+  try {
+    const {eventId, eventTitle, fileUrls} = req.body
   const dbRes = await dataBase.run(
     `INSERT INTO user_uploaded (event_id, username, event_title, uploads) VALUES ('${eventId}', '${req.username}', '${eventTitle}', '${fileUrls}');`,
   )
   res
     .status(200)
     .send({message: 'Event Details Added...', dbRes, username: req.username})
-})
+  }catch(e){
+    res.status(400).send({message: e.message})
+  }
+})  
 
 //API - 4
 app.get('/all-items/:id/', check, async (req, res) => {
-
-  
   try{
     const {id} = req.params
     console.log(id)
@@ -156,6 +158,7 @@ app.get('/get-event-details/:event_id', check, async (req, res) => {
     const dbRes = await dataBase.get(
       `SELECT * FROM user_uploaded WHERE event_id = '${req.params.event_id}';`,
     )
+    console.log(dbRes)
     res.status(200).send(dbRes)
   } catch (e) {
     console.log(e.message)
@@ -175,13 +178,15 @@ app.put('/update-event/:event_id', check, async (req, res) => {
   }
 })
 
+//API - 7
 app.put("/update-event-detail/", check, async (req, res) => {
   try {
     console.log(req.body.event_id)
+    console.log(req.body.title)
     const dbRes = await dataBase.get(`SELECT * FROM user_uploaded WHERE event_id = '${req.body.event_id}'`)
     if(dbRes !== undefined){
       //console.log(req.body.files)
-      const update = await dataBase.run(`UPDATE user_uploaded SET uploads = '${req.body.files}', title = '${req.body.title}' WHERE event_id ='${req.body.event_id}';`)
+      const update = await dataBase.run(`UPDATE user_uploaded SET uploads = '${req.body.files}', event_title = '${req.body.title}' WHERE event_id ='${req.body.event_id}';`)
       res.status(200).send({message: "Sucess"})
     }
   }catch(e){
@@ -189,6 +194,7 @@ app.put("/update-event-detail/", check, async (req, res) => {
   }
 })
 
+//API - 8
 app.delete("/delete/:event_id/", check, async(req, res) => {
   try {
     const {event_id} = req.params
