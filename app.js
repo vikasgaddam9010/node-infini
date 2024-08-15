@@ -181,7 +181,7 @@ app.put("/update-event-detail/", check, async (req, res) => {
     const dbRes = await dataBase.get(`SELECT * FROM user_uploaded WHERE event_id = '${req.body.event_id}'`)
     if(dbRes !== undefined){
       //console.log(req.body.files)
-      const update = await dataBase.run(`UPDATE user_uploaded SET uploads = '${req.body.files}' WHERE event_id ='${req.body.event_id}';`)
+      const update = await dataBase.run(`UPDATE user_uploaded SET uploads = '${req.body.files}', title = '${req.body.title}' WHERE event_id ='${req.body.event_id}';`)
       res.status(200).send({message: "Sucess"})
     }
   }catch(e){
