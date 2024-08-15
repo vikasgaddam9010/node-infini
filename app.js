@@ -154,12 +154,26 @@ app.put('/update-event/:event_id', check, async (req, res) => {
     const dbRes = await dataBase.get(
       `SELECT * FROM user_uploaded WHERE event_id = '${req.params.event_id}';`,
     )
-    get
+    res.status(200).send({message:"Sucess"})
   } catch (e) {
-    console.log(e.message)
+    res.status(400).send(e.message)
   }
 })
 
-app.listen(3000)
+app.put("/update-event-detail/:event_id", check, async (req, res) => {
+  try {
+    //console.log(req.params.event_id)
+    const dbRes = await dataBase.get(`SELECT * FROM user_uploaded WHERE event_id = '${req.params.event_id}'`)
+    if(dbRes !== undefined){
+      //console.log(req.body.files)
+      const update = await db.run(`UPDATE user_uploaded SET uploads = ${req.body.files} WHERE event_id ='${req.params.event_id}';`)
+      console.log("vfg"+update)
+    }
+  }catch(e){
+    console.log(e.message+"dsfjjdf")
+  }
+})
+
+app.listen(3001)
 
 module.exports = app
