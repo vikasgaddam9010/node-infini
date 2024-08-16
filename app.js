@@ -206,6 +206,17 @@ app.delete("/delete/:event_id/", check, async(req, res) => {
   }
 })
 
+//API - 9
+app.get("/get-guest-all-items/:userid/", async (req, res) => {
+  try{
+    //console.log({id: req.params.userid})
+    const dbRes = await dataBase.all(`SELECT * FROM user_uploaded WHERE event_id='${req.params.userid}';`)
+    res.status(200).send({message: dbRes})
+  }catch(e){
+    res.status(400).send({message: e.message})
+  }
+})
+
 app.listen(3001)
 
 module.exports = app
